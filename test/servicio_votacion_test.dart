@@ -111,4 +111,55 @@ void main() {
 
     expect(ganadores.length, 3);
   });
+
+
+  test('no se puede votar si la votacion ya cerro', () {
+    final votacionCerrada = _crearVotacionDePrueba(
+      fechaCierre: DateTime(2000, 1, 1), // fecha en el pasado
+    );
+    final servicio = ServicioVotacion(votacionCerrada);
+
+    final resultado = servicio.registrarVoto(idUsuario: 'user1', idOpcion: 'op1');
+
+    expect(resultado, ResultadoVoto.votacionCerrada);
+    expect(votacionCerrada.opciones[0].votos, 0);
+  });
+
+  test('si la votacion sigue abierta, el voto se registra normalmente', () {
+    final votacionAbierta = _crearVotacionDePrueba(
+      fechaCierre: DateTime.now().add(const Duration(days: 1)),
+    );
+    final servicio = ServicioVotacion(votacionAbierta);
+
+    final resultado = servicio.registrarVoto(idUsuario: 'user1', idOpcion: 'op1');
+
+    expect(resultado, ResultadoVoto.exitoso);
+  });
+
+
+  test('simulacion completa: varios vecinos votan y se determina un ganador', () {
+    final votacion = Votacion(
+      pregunta: 'Que obra prioritaria debe realizar el municipio?',
+      opciones: [
+        OpcionVotacion(id: 'jardin', texto: 'Rehabilitacion del Jardin Principal'),
+        OpcionVotacion(id: 'biblioteca', texto: 'Nueva Biblioteca Digital'),
+        OpcionVotacion(id: 'alumbrado', texto: 'Alumbrado en el Barrio de Analco'),
+      ],
+      fechaCierre: DateTime.now().add(const Duration(days: 3)),
+    );
+    final servicio = ServicioVotacion(votacion);
+
+    servicio.registrarVoto(idUsuario: 'vecino1', idOpcion: 'jardin');
+    servicio.registrarVoto(idUsuario: 'vecino2', idOpcion: 'jardin');
+    servicio.registrarVoto(idUsuario: 'vecino3', idOpcion: 'biblioteca');
+    servicio.registrarVoto(idUsuario: 'vecino1', idOpcion: 'alumbrado'); // intento duplicado
+
+    final resultados = servicio.obtenerResultados();
+    final totalVotos = resultados.fold<double>(0, (s, r) => s + r.opcion.votos);
+    final ganadores = servicio.determinarGanador();
+
+    expect(totalVotos, 3); // el duplicado de vecino1 no debe contar
+    expect(ganadores.length, 1);
+    expect(ganadores.first.id, 'jardin');
+  });
 }

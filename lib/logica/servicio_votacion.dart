@@ -9,7 +9,11 @@ class ServicioVotacion {
   ServicioVotacion(this.votacion);
 
   ResultadoVoto registrarVoto({required String idUsuario, required String idOpcion}) {
-    if (votacion.votantes.contains(idUsuario)) return ResultadoVoto.usuarioYaVoto;
+    final yaCerro = DateTime.now().isAfter(votacion.fechaCierre);
+    if (yaCerro) return ResultadoVoto.votacionCerrada;
+
+    final yaVoto = votacion.votantes.contains(idUsuario);
+    if (yaVoto) return ResultadoVoto.usuarioYaVoto;
 
     final opcion = _buscarOpcion(idOpcion);
     if (opcion == null) return ResultadoVoto.opcionInvalida;
@@ -19,7 +23,6 @@ class ServicioVotacion {
     return ResultadoVoto.exitoso;
   }
 
-  // <--- Agrega este método aquí:
   List<ResultadoOpcion> obtenerResultados() {
     final total = votacion.opciones.fold<int>(0, (suma, o) => suma + o.votos);
     return votacion.opciones.map((o) {
@@ -28,15 +31,15 @@ class ServicioVotacion {
     }).toList();
   }
 
+  List<OpcionVotacion> determinarGanador() {
+    final maxVotos = votacion.opciones.map((o) => o.votos).reduce((a, b) => a > b ? a : b);
+    return votacion.opciones.where((o) => o.votos == maxVotos).toList();
+  }
+
   OpcionVotacion? _buscarOpcion(String id) {
     for (final o in votacion.opciones) {
       if (o.id == id) return o;
     }
     return null;
-  }
-
-  List<OpcionVotacion> determinarGanador() {
-    final maxVotos = votacion.opciones.map((o) => o.votos).reduce((a, b) => a > b ? a : b);
-    return votacion.opciones.where((o) => o.votos == maxVotos).toList();
   }
 }
