@@ -89,4 +89,26 @@ void main() {
     expect(ganadores.length, 1);
     expect(ganadores.first.id, 'op1');
   });
+
+
+  test('si hay empate, determinarGanador regresa mas de una opcion', () {
+    final votacion = Votacion(
+      pregunta: 'Pregunta de prueba',
+      opciones: [
+        OpcionVotacion(id: 'op1', texto: 'Opcion 1'),
+        OpcionVotacion(id: 'op2', texto: 'Opcion 2'),
+        OpcionVotacion(id: 'op3', texto: 'Opcion 3'),
+      ],
+      fechaCierre: DateTime.now().add(const Duration(days: 7)),
+    );
+    final servicio = ServicioVotacion(votacion);
+
+    servicio.registrarVoto(idUsuario: 'u1', idOpcion: 'op1');
+    servicio.registrarVoto(idUsuario: 'u2', idOpcion: 'op2');
+    servicio.registrarVoto(idUsuario: 'u3', idOpcion: 'op3');
+
+    final ganadores = servicio.determinarGanador();
+
+    expect(ganadores.length, 3);
+  });
 }
